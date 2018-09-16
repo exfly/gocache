@@ -16,13 +16,13 @@ type MemCache struct {
 	items simplelru.LRUCache
 }
 
-func NewMemCache(size int) gocache.Cache {
+func NewMemCache(size int, ttl time.Duration) gocache.Cache {
 	l, err := simplelru.NewLRU(size, nil)
 	if err != nil {
 		log.Fatalf("err: %v", err)
 	}
 	return &MemCache{
-		ttl:   1000,
+		ttl:   ttl,
 		items: l,
 	}
 }
@@ -35,7 +35,12 @@ func (m *MemCache) Get(key string) (ret interface{}, err error) {
 	} else {
 		it, _ := item.(*Item)
 		if !it.isExpired() {
-			ret = it.data
+			datap := it.data
+			if datap != nil {
+				ret = *datap
+			}
+		} else {
+			log.Printf("key:%v is expired", key)
 		}
 	}
 	m.mutex.RUnlock()
