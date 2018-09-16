@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	ErrNotMatch = errors.New("Cache not match")
+	ErrNotMatch     = errors.New("Cache not match")
+	ErrNotFoundItem = errors.New("Cache not found the item")
 )
 
 type Cache interface {

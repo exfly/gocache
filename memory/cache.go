@@ -2,33 +2,40 @@ package memory
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	"github.com/ExFly/gocache"
+	"github.com/ExFly/gocache/memory/simplelru"
 )
 
 type MemCache struct {
 	mutex sync.RWMutex
 	ttl   time.Duration
-	items map[string]*Item
+	items simplelru.LRUCache
 }
 
-func NewMemCache() gocache.Cache {
+func NewMemCache(size int) gocache.Cache {
+	l, err := simplelru.NewLRU(size, nil)
+	if err != nil {
+		log.Fatalf("err: %v", err)
+	}
 	return &MemCache{
 		ttl:   1000,
-		items: make(map[string]*Item),
+		items: l,
 	}
 }
 
 func (m *MemCache) Get(key string) (ret interface{}, err error) {
 	m.mutex.RLock()
-	item, ok := m.items[key]
+	item, ok := m.items.Get(key)
 	if !ok {
 		err = gocache.ErrNotMatch
 	} else {
-		if !item.isExpired() {
-			ret = item.data
+		it, _ := item.(*Item)
+		if !it.isExpired() {
+			ret = it.data
 		}
 	}
 	m.mutex.RUnlock()
@@ -39,16 +46,16 @@ func (m *MemCache) Set(key string, val interface{}, opts ...time.Time) error {
 	ex := time.Now().Add(m.ttl)
 	item := Item{data: &val, expires: &ex}
 	m.mutex.Lock()
-	m.items[key] = &item
+	m.items.Add(key, &item)
 	m.mutex.Unlock()
 	return nil
 }
 
 func (m *MemCache) Remove(key string) error {
 	m.mutex.Lock()
-	_, ok := m.items[key]
-	if ok {
-		delete(m.items, key)
+	ok := m.items.Remove(key)
+	if !ok {
+		return gocache.ErrNotFoundItem
 	}
 	m.mutex.Unlock()
 	return nil
@@ -56,12 +63,13 @@ func (m *MemCache) Remove(key string) error {
 
 func (m *MemCache) IsExpired(key string) (ret bool) {
 	m.mutex.RLock()
-	item, ok := m.items[key]
+	item, ok := m.items.Get(key)
 	ret = true
 	if ok {
-		ret = item.isExpired()
+		it := item.(*Item)
+		ret = it.isExpired()
 		if ret == true {
-			delete(m.items, key)
+			m.items.Remove(key)
 		}
 	}
 	m.mutex.RUnlock()
@@ -71,8 +79,12 @@ func (m *MemCache) IsExpired(key string) (ret bool) {
 func (m MemCache) String() string {
 	m.mutex.RLock()
 	ts := ""
-	for k, v := range m.items {
-		ts += "[" + k + "]" + (*v).String() + ","
+	for _, k := range m.items.Keys() {
+		it, ok := m.items.Get(k)
+		if !ok {
+			continue
+		}
+		ts += "[" + k.(string) + "]" + it.(*Item).String() + ","
 	}
 	m.mutex.RUnlock()
 	return fmt.Sprintf("MemCache{ttl:%d,items:%v}", m.ttl, ts)

@@ -7,7 +7,7 @@ import (
 )
 
 func TestMemCache_Cache(t *testing.T) {
-	cacher := NewMemCache()
+	cacher := NewMemCache(2)
 	cacher.Set("key1", "val1")
 	cacher.Set("key2", "val2")
 	t.Log(cacher)
