@@ -48,8 +48,8 @@ func (m *MemCache) Get(key string) (ret interface{}, err error) {
 }
 
 func (m *MemCache) Set(key string, val interface{}, opts ...time.Time) error {
-	ex := time.Now().Add(m.ttl)
-	item := Item{data: &val, expires: &ex}
+	expired := time.Now().Add(m.ttl)
+	item := Item{data: &val, expires: &expired}
 	m.mutex.Lock()
 	m.items.Add(key, &item)
 	m.mutex.Unlock()

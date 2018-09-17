@@ -29,9 +29,10 @@ func Benchmark_Set(b *testing.B) {
 	cacher := NewMemCache(2, 5*time.Second)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cacher.Set("key1", "val1")
+		cacher.Set("key"+string(i), "val"+string(i))
 	}
 }
+
 func Benchmark_SetParallel(b *testing.B) {
 	cacher := NewMemCache(2, 5*time.Second)
 	b.RunParallel(func(pb *testing.PB) {
