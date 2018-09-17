@@ -2,6 +2,7 @@ package memory
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ExFly/gocache"
 )
@@ -23,4 +24,39 @@ func TestMemCache_Cache(t *testing.T) {
 	if err != gocache.ErrNotMatch {
 		t.Error(err)
 	}
+}
+func Benchmark_Set(b *testing.B) {
+	cacher := NewMemCache(2, 5*time.Second)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		cacher.Set("key1", "val1")
+	}
+}
+func Benchmark_SetParallel(b *testing.B) {
+	cacher := NewMemCache(2, 5*time.Second)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			cacher.Set("key1", "val1")
+		}
+	})
+}
+
+func Benchmark_Get(b *testing.B) {
+	cacher := NewMemCache(2, 5*time.Second)
+	cacher.Set("key1", "val1")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		cacher.Get("key1")
+	}
+}
+
+// 测试并发效率
+func Benchmark_GetParallel(b *testing.B) {
+	cacher := NewMemCache(2, 5*time.Second)
+	cacher.Set("key1", "val1")
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			cacher.Get("key1")
+		}
+	})
 }
