@@ -8,7 +8,7 @@ import (
 )
 
 func TestMemCache_Cache(t *testing.T) {
-	cacher := NewMemCache(2, 1000000000)
+	cacher := NewMemCache(10, 5*time.Second)
 	cacher.Set("key1", "val1")
 	cacher.Set("key2", "val2")
 	t.Log(cacher)
@@ -43,7 +43,7 @@ func Benchmark_SetParallel(b *testing.B) {
 }
 
 func Benchmark_Get(b *testing.B) {
-	cacher := NewMemCache(2, 5*time.Second)
+	cacher := NewMemCache(2, 5*time.Minute)
 	cacher.Set("key1", "val1")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -53,7 +53,7 @@ func Benchmark_Get(b *testing.B) {
 
 // 测试并发效率
 func Benchmark_GetParallel(b *testing.B) {
-	cacher := NewMemCache(2, 5*time.Second)
+	cacher := NewMemCache(2, 5*time.Minute)
 	cacher.Set("key1", "val1")
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
