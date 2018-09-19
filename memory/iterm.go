@@ -16,11 +16,12 @@ func (it *Item) touch(duration time.Duration) {
 	it.expires = &expiration
 }
 
-func (it *Item) isExpired() (ret bool) {
+func (it *Item) isExpired() bool {
+	ret := true
 	if it.expires != nil {
 		ret = it.expires.Before(time.Now())
 	}
-	return
+	return ret
 }
 func (itt Item) String() (ret string) {
 	return fmt.Sprintf("Item{data:%v,expires:%v}", *itt.data, itt.expires)
